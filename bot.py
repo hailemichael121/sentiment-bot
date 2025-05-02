@@ -5,6 +5,7 @@ This bot automatically analyzes text sentiment in private chats without requirin
 For groups, it moderates toxic content. Includes rich UI with buttons and visual feedback.
 """
 
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
@@ -14,20 +15,20 @@ from telegram import (
     Update,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
-    WebAppInfo,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove
+    WebAppInfo
+
 )
 import telegram
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
+    ContextTypes,
+    CallbackContext,
     CommandHandler,
     MessageHandler,
     filters,
-    ContextTypes,
-    CallbackContext,
     CallbackQueryHandler
+
 )
 
 from analyzer import TextAnalyzer
@@ -135,7 +136,7 @@ async def analyze_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     # Prepare the response
     emoji = SENTIMENT_EMOJIS.get(sentiment, "🤔")
-    color = SENTIMENT_COLORS.get(sentiment, "#9E9E9E")
+    # color = SENTIMENT_COLORS.get(sentiment, "#9E9E9E")
 
     if sentiment == "toxic":
         response = (
@@ -431,20 +432,64 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 async def main():
-    """Run with error handling for cloud"""
+    """Initialize and run the Telegram bot with retries and proper handler setup."""
     max_retries = 3
+
     for attempt in range(max_retries):
         try:
-            application = build_application()
+            application = (
+                Application.builder()
+                .token(Config.TELEGRAM_TOKEN)
+                .read_timeout(30)
+                .write_timeout(30)
+                .connect_timeout(30)
+                .pool_timeout(30)
+                .build()
+            )
+
+            # 1. Command handlers
+            application.add_handler(CommandHandler("start", start))
+            application.add_handler(CommandHandler("stats", user_stats))
+            application.add_handler(CommandHandler("help", help_command))
+
+            # 2. Callback query handler
+            application.add_handler(CallbackQueryHandler(button_handler))
+
+            # 3. Message handlers
+            application.add_handler(MessageHandler(
+                filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
+                analyze_message
+            ))
+            application.add_handler(MessageHandler(
+                filters.TEXT & filters.ChatType.GROUPS & ~filters.COMMAND,
+                handle_group_message
+            ))
+
+            # 4. Error handler
+            application.add_error_handler(error_handler)
+
+            # 5. Job queue for weekly reports
+            if Config.ADMIN_USERNAME:
+                application.job_queue.run_repeating(
+                    send_weekly_report,
+                    interval=timedelta(weeks=1).total_seconds(),
+                    first=0
+                )
+
+            # Start the bot
             await application.initialize()
             await application.start()
             await application.updater.start_polling()
-            logger.info("Bot started successfully")
+            logger.info("Bot started successfully ✅")
+
+            # Keep the bot running
             while True:
-                await asyncio.sleep(3600)  # Keep alive
+                await asyncio.sleep(3600)
+
         except Exception as e:
-            logger.error(f"Attempt {attempt+1} failed: {str(e)}")
+            logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
             if attempt == max_retries - 1:
+                logger.critical("Max retries reached. Exiting...")
                 raise
             await asyncio.sleep(5 * (attempt + 1))
 
