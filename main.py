@@ -8,6 +8,7 @@ It handles the web interface, static files, and bot initialization with proper e
 import asyncio
 import logging
 
+import multiprocessing
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,6 +20,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Sentiment Analysis Bot API")
+
 
 # Serve static files for a future frontend (like a landing page)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -286,6 +288,8 @@ async def web_app():
 async def startup_event() -> None:
     """Startup event handler that launches the Telegram bot."""
     asyncio.create_task(run_bot())
+    process = multiprocessing.Process(target=run_bot)
+    process.start()
 
 # ---------------- GLOBAL ERROR HANDLERS ----------------
 

@@ -430,54 +430,23 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
             logger.error("Failed to send error message: %s", e)
 
 
-async def main() -> None:
-    """Start the bot with proper handler ordering."""
-    application = (
-        Application.builder()
-        .token(Config.TELEGRAM_TOKEN)
-        .read_timeout(30)
-        .write_timeout(30)
-        .connect_timeout(30)
-        .pool_timeout(30)
-        .build()
-    )
-
-    # Handlers should be added in order of priority
-    # 1. Command handlers (highest priority)
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("stats", user_stats))
-    application.add_handler(CommandHandler("help", help_command))
-
-    # 2. Callback query handler (for button presses)
-    application.add_handler(CallbackQueryHandler(button_handler))
-
-    # 3. Message handlers (with proper filters)
-    application.add_handler(MessageHandler(
-        filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
-        analyze_message
-    ))
-    application.add_handler(MessageHandler(
-        filters.TEXT & filters.ChatType.GROUPS & ~filters.COMMAND,
-        handle_group_message
-    ))
-
-    # Error handler
-    application.add_error_handler(error_handler)
-
-    # Job queue for weekly reports
-    if Config.ADMIN_USERNAME:
-        application.job_queue.run_repeating(
-            send_weekly_report,
-            interval=timedelta(weeks=1).total_seconds(),
-            first=0
-        )
-
-    # Start the bot
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling()
-    logger.info("Bot started successfully")
-
+async def main():
+    """Run with error handling for cloud"""
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            application = build_application()
+            await application.initialize()
+            await application.start()
+            await application.updater.start_polling()
+            logger.info("Bot started successfully")
+            while True:
+                await asyncio.sleep(3600)  # Keep alive
+        except Exception as e:
+            logger.error(f"Attempt {attempt+1} failed: {str(e)}")
+            if attempt == max_retries - 1:
+                raise
+            await asyncio.sleep(5 * (attempt + 1))
 
 if __name__ == '__main__':
     main()
