@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevTeam | Elite Developers</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    />
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --text: #1e293b;
+        --text-light: #64748b;
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --radius: 12px;
+        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.5;
+        color: var(--text);
+        background-color: var(--bg);
+        padding: 24px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+        animation: fadeIn 0.6s ease-out;
+      }
+
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(90deg, #2563eb, #7c3aed);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .subtitle {
+        color: var(--text-light);
+        font-size: 1rem;
+        font-weight: 400;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .portfolio-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+
+      .portfolio-card {
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        animation: slideUp 0.4s ease-out forwards;
+        opacity: 0;
+      }
+
+      .portfolio-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      .portfolio-card:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .portfolio-card:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .portfolio-card:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      .dev-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--text);
+      }
+
+      .dev-role {
+        font-size: 0.875rem;
+        color: var(--primary);
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: rgba(37, 99, 235, 0.1);
+        border-radius: 4px;
+      }
+
+      .dev-bio {
+        color: var(--text-light);
+        font-size: 0.9375rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        background: var(--primary);
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: var(--transition);
+        border: none;
+        cursor: pointer;
+        width: 100%;
+      }
+
+      .btn:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+      }
+
+      .btn i {
+        margin-left: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Telegram-specific adjustments */
+      .tg-body {
+        background: var(--tg-theme-bg-color, var(--bg));
+        color: var(--tg-theme-text-color, var(--text));
+      }
+
+      .tg-card {
+        background: var(--tg-theme-secondary-bg-color, var(--card-bg));
+      }
+    </style>
+  </head>
+  <body class="tg-body">
+    <div class="container">
+      <header>
+        <h1>Elite Development Team</h1>
+        <p class="subtitle">
+          Crafting exceptional digital experiences with cutting-edge technology
+          and innovative solutions
+        </p>
+      </header>
+
+      <div class="portfolio-grid" id="portfolio-container">
+        <!-- Cards will be injected here -->
+      </div>
+    </div>
+
+    <script>
+      // Initialize Telegram WebApp
+      const tg = window.Telegram.WebApp;
+      tg.expand();
+      tg.enableClosingConfirmation();
+
+      // Dynamic theme adaptation
+      document.body.classList.add(
+        tg.colorScheme === "dark" ? "tg-theme-dark" : "tg-theme-light"
+      );
+
+      // Team data - could be fetched from API in production
+      const team = [
+        {
+          name: "Hailemichael A.",
+          role: "Backend Architect",
+          bio: "Specializing in high-performance Python systems, FastAPI microservices, and scalable cloud architectures. 5+ years building robust backend solutions.",
+          link: "https://github.com/hailemichael",
+          skills: ["Python", "FastAPI", "Docker", "AWS"],
+        },
+        {
+          name: "Alexandra M.",
+          role: "Frontend Engineer",
+          bio: "Creating beautiful, responsive interfaces with React and Vue. Passionate about UX design and performance optimization.",
+          link: "https://example.com/frontend",
+          skills: ["JavaScript", "React", "Vue", "UI/UX"],
+        },
+        {
+          name: "James K.",
+          role: "DevOps Specialist",
+          bio: "CI/CD pipelines, infrastructure as code, and cloud automation expert. Ensuring seamless deployments and maximum uptime.",
+          link: "https://example.com/devops",
+          skills: ["Kubernetes", "Terraform", "AWS", "GitLab CI"],
+        },
+      ];
+
+      // Render team cards
+      const container = document.getElementById("portfolio-container");
+
+      team.forEach((member, index) => {
+        const card = document.createElement("div");
+        card.className = "portfolio-card tg-card";
+        card.innerHTML = `
+                <h3 class="dev-name">${member.name}</h3>
+                <div class="dev-role">${member.role}</div>
+                <p class="dev-bio">${member.bio}</p>
+                <div style="margin-bottom: 1rem;">
+                    ${member.skills
+                      .map(
+                        (skill) =>
+                          `<span style="display: inline-block; background: rgba(37, 99, 235, 0.1); 
+                          color: var(--primary); padding: 0.25rem 0.5rem; border-radius: 4px; 
+                          font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.5rem;">
+                            ${skill}
+                        </span>`
+                      )
+                      .join("")}
+                </div>
+                <a href="${member.link}" class="btn" target="_blank">
+                    View Portfolio
+                    <i>&rarr;</i>
+                </a>
+            `;
+        container.appendChild(card);
+
+        // Add staggered animation
+        card.style.animationDelay = `${index * 0.1 + 0.2}s`;
+      });
+
+      // Theme change handler
+      tg.onEvent("themeChanged", () => {
+        document.body.classList.toggle(
+          "tg-theme-dark",
+          tg.colorScheme === "dark"
+        );
+      });
+    </script>
+  </body>
+</html>

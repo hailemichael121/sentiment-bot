@@ -1,0 +1,10 @@
+python-telegram-bot==20.3
+fastapi==0.95.2
+uvicorn==0.22.0
+transformers==4.36.2
+torch                        
+python-dotenv==1.0.0
+pymongo==4.5.0
+dnspython==2.4.2
+redis==4.6.0
+pytz==2024.1

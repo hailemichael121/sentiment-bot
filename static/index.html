@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sentiment Bot Web</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      .container {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2b7cd3;
+        margin-top: 0;
+      }
+      .btn {
+        background: #2b7cd3;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 16px;
+      }
+      .btn:hover {
+        background: #1a5eb8;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 16px;
+        border-radius: 8px;
+        background: #f0f7ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Sentiment Analysis</h1>
+      <p>Enter text to analyze its sentiment:</p>
+      <textarea
+        id="textInput"
+        rows="5"
+        style="
+          width: 100%;
+          padding: 10px;
+          border-radius: 8px;
+          border: 1px solid #ddd;
+        "
+      ></textarea>
+      <button class="btn" onclick="analyze()">Analyze Sentiment</button>
+      <div id="result" class="result" style="display: none"></div>
+    </div>
+
+    <script>
+      function analyze() {
+        const text = document.getElementById("textInput").value.trim();
+        if (!text) {
+          alert("Please enter some text to analyze");
+          return;
+        }
+
+        // In a real implementation, you'd call your API here
+        // For demo, we'll simulate a response
+        const sentiments = ["negative", "neutral", "positive"];
+        const randomSentiment =
+          sentiments[Math.floor(Math.random() * sentiments.length)];
+        const confidence = (Math.random() * 0.5 + 0.5).toFixed(2);
+
+        const emoji =
+          randomSentiment === "positive"
+            ? "😊"
+            : randomSentiment === "negative"
+            ? "😞"
+            : "😐";
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = `
+                <h3>Analysis Result</h3>
+                <p><strong>Text:</strong> ${text.substring(0, 50)}${
+          text.length > 50 ? "..." : ""
+        }</p>
+                <p><strong>Sentiment:</strong> ${randomSentiment} ${emoji}</p>
+                <p><strong>Confidence:</strong> ${(confidence * 100).toFixed(
+                  1
+                )}%</p>
+            `;
+        resultDiv.style.display = "block";
+      }
+
+      // Handle Telegram WebApp data
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.expand();
+        Telegram.WebApp.ready();
+      }
+    </script>
+  </body>
+</html>

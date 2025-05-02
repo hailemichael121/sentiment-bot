@@ -1,0 +1,68 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+V1/web/node_modules/
+
+# VS Code settings
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# pipenv
+Pipfile.lock
+
+# dotenv
+.env
+.env.*
+
+# Build / distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Editable installs
+*.egg
+
+# macOS / Linux / Ubuntu
+.DS_Store
+Thumbs.db
+
+# If you use poetry
+poetry.lock

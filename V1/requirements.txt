@@ -1,0 +1,7 @@
+python-telegram-bot==20.3
+nltk==3.8.1
+python-dotenv==1.0.0
+loguru==0.7.0
+pytest==7.4.0
+urllib3>=1.26.0
+requests>=2.31.0
