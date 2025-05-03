@@ -8,12 +8,14 @@ It handles the web interface, static files, and bot initialization with proper e
 import asyncio
 import logging
 
-import multiprocessing
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import telegram.error
 from config import Config
+
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +23,11 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Sentiment Analysis Bot API")
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+)
 # Serve static files for a future frontend (like a landing page)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
