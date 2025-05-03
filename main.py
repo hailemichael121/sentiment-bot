@@ -284,6 +284,11 @@ async def web_app():
     return FileResponse("static/webapp/index.html")
 
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     """Startup event handler that launches the Telegram bot."""

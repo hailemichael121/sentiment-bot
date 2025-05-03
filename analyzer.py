@@ -15,19 +15,19 @@ class TextAnalyzer:
     def __init__(self):
         """Initialize sentiment and toxicity models"""
         try:
-            # Sentiment analysis model
             self.sentiment = pipeline(
                 "text-classification",
-                model="distilbert-base-uncased-finetuned-sst-2-english"
+                model="finiteautomata/bertweet-base-sentiment-analysis",  # 3x smaller
+                device=-1  # Force CPU usage
             )
 
-            # Toxicity detection model
             self.toxicity = pipeline(
                 "text-classification",
-                model="facebook/roberta-hate-speech-dynabench-r4-target"
+                model="unitary/toxic-bert",  # Optimized for low-resource environments
+                device=-1
             )
-
             logger.info("Models loaded successfully")
+
         except Exception as e:  # pylint: disable=broad-except
             logger.error("Failed to load models: %s", e)
             raise

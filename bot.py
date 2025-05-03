@@ -432,21 +432,18 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 async def main():
-    """Initialize and run the Telegram bot with retries and proper handler setup."""
+    """Run bot with webhook configuration for Railway"""
     max_retries = 3
+    webhook_url = f"{Config.RAILWAY_STATIC_URL}/{Config.TELEGRAM_TOKEN}"
 
     for attempt in range(max_retries):
         try:
             application = (
                 Application.builder()
                 .token(Config.TELEGRAM_TOKEN)
-                .read_timeout(30)
-                .write_timeout(30)
-                .connect_timeout(30)
-                .pool_timeout(30)
+                .updater(None)  # Disable polling
                 .build()
             )
-
             # 1. Command handlers
             application.add_handler(CommandHandler("start", start))
             application.add_handler(CommandHandler("stats", user_stats))
@@ -477,12 +474,24 @@ async def main():
                 )
 
             # Start the bot
-            await application.initialize()
-            await application.start()
-            await application.updater.start_polling()
+            # Webhook specific setup
+            await application.bot.set_webhook(
+                url=f"{Config.WEBHOOK_URL}/{Config.TELEGRAM_TOKEN}",
+                secret_token=Config.WEBHOOK_SECRET,
+                allowed_updates=Update.ALL_TYPES
+            )
+
+            # Start webhook server
+            async with application:
+                await application.start()
+                logger.info("Bot started with webhooks ✅")
+                while True:
+                    await asyncio.sleep(3600)
+
+            logger.info("Webhook set to: %s", webhook_url)
             logger.info("Bot started successfully ✅")
 
-            # Keep the bot running
+            # Keep the app alive (simplified for Railway)
             while True:
                 await asyncio.sleep(3600)
 
@@ -492,6 +501,5 @@ async def main():
                 logger.critical("Max retries reached. Exiting...")
                 raise
             await asyncio.sleep(5 * (attempt + 1))
-
 if __name__ == '__main__':
     main()

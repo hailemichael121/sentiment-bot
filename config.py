@@ -18,3 +18,7 @@ class Config:
     RATE_LIMIT = int(os.getenv("RATE_LIMIT", "5"))
     WEBAPP_BASE_URL = os.getenv("WEBAPP_BASE_URL")
     BOT_USERNAME = os.getenv("SENTIMENT_BOT_USERNAME")
+    RAILWAY_STATIC_URL = os.getenv("RAILWAY_STATIC_URL")
+    WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+    WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", "443"))
+    WEBHOOK_URL = os.getenv("WEBHOOK_URL")
