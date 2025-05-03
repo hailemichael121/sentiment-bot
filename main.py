@@ -288,8 +288,7 @@ async def web_app():
 async def startup_event() -> None:
     """Startup event handler that launches the Telegram bot."""
     asyncio.create_task(run_bot())
-    process = multiprocessing.Process(target=run_bot)
-    process.start()
+
 
 # ---------------- GLOBAL ERROR HANDLERS ----------------
 

@@ -2,68 +2,104 @@
 MongoDB operations for sentiment analysis bot
 """
 
+import os
 import logging
 from datetime import datetime
-from pymongo import MongoClient
-import pymongo
+from pymongo import MongoClient, errors as pymongo_errors
 from config import Config
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Database:
-    """Handles all database operations"""
+    """Handles all MongoDB operations for the bot."""
 
     def __init__(self):
-        """Initialize MongoDB connection"""
+        """Initialize the MongoDB client and database."""
         try:
             self.client = MongoClient(Config.MONGODB_URI)
-            self.db = self.client.get_database()
-            logger.info("Connected to MongoDB successfully")
-        except (pymongo.errors.PyMongoError, ValueError, KeyError) as e:
-            logger.error("Failed to connect to MongoDB: %s", e)
+
+            # Determine the database name
+            db_name = self._extract_db_name(
+                Config.MONGODB_URI) or os.getenv("MONGODB_NAME")
+
+            if not db_name:
+                raise ValueError(
+                    "No MongoDB database name provided in URI/MONGODB_NAME environment variable.")
+
+            self.db = self.client[db_name]
+            logger.info("Connected to MongoDB database: %s", db_name)
+
+        except (pymongo_errors.PyMongoError, ValueError, KeyError) as e:
+            logger.exception("Failed to initialize MongoDB: %s", e)
             raise
 
-    def get_message_count(self, since=None, user_id=None):
-        """Get count of messages optionally filtered by date and user"""
-        query = {}
-        if since:
-            query["timestamp"] = {"$gte": since}
-        if user_id:
-            query["user_id"] = user_id
-        return self.db.messages.count_documents(query)
+    @staticmethod
+    def _extract_db_name(uri: str) -> str | None:
+        """Extract default DB name from Mongo URI, if present."""
+        try:
+            path = uri.split(".net/", 1)[-1]
+            db_name = path.split("?", 1)[0]
+            return db_name if db_name else None
+        except (pymongo_errors.PyMongoError, ValueError, KeyError):
+            return None
 
-    def get_sentiment_count(self, sentiment, since=None, user_id=None):
-        """Get count of messages with a specific sentiment"""
-        query = {"sentiment": sentiment}
-        if since:
-            query["timestamp"] = {"$gte": since}
-        if user_id:
-            query["user_id"] = user_id
-        return self.db.messages.count_documents(query)
-
-    def get_active_group_count(self, since=None):
-        """Get the count of active groups"""
-        pipeline = [
-            {"$match": {"is_group": True}},
-            {"$group": {"_id": "$chat_id"}},
-            {"$count": "count"}
-        ]
-        if since:
-            pipeline[0]["$match"]["timestamp"] = {"$gte": since}
-        result = list(self.db.messages.aggregate(pipeline))
-        return result[0]["count"] if result else 0
-
-    def log_message(self, message_data):
-        """Log a message to the database"""
+    def log_message(self, message_data: dict):
+        """Insert a message into the database."""
         try:
             message_data["timestamp"] = datetime.utcnow()
             self.db.messages.insert_one(message_data)
-        except (pymongo.errors.PyMongoError, TypeError, ValueError) as e:
-            logger.error("Failed to log message: %s", e)
+        except (pymongo_errors.PyMongoError, ValueError, KeyError) as e:
+            logger.exception("Failed to log message: %s", e)
+
+    def get_message_count(self, since=None, user_id=None):
+        """Count all messages (optionally filtered)."""
+        try:
+            query = {}
+            if since:
+                query["timestamp"] = {"$gte": since}
+            if user_id:
+                query["user_id"] = user_id
+            return self.db.messages.count_documents(query)
+        except (pymongo_errors.PyMongoError, ValueError, KeyError) as e:
+            logger.exception("Failed to count messages: %s ", e)
+            return 0
+
+    def get_sentiment_count(self, sentiment, since=None, user_id=None):
+        """Count messages with a specific sentiment."""
+        try:
+            query = {"sentiment": sentiment}
+            if since:
+                query["timestamp"] = {"$gte": since}
+            if user_id:
+                query["user_id"] = user_id
+            return self.db.messages.count_documents(query)
+        except (pymongo_errors.PyMongoError, ValueError, KeyError) as e:
+            logger.exception(
+                "Failed to count sentiment '%s': %s", sentiment, e)
+            return 0
+
+    def get_active_group_count(self, since=None):
+        """Count unique active group chats."""
+        try:
+            match_stage = {"is_group": True}
+            if since:
+                match_stage["timestamp"] = {"$gte": since}
+
+            pipeline = [
+                {"$match": match_stage},
+                {"$group": {"_id": "$chat_id"}},
+                {"$count": "count"}
+            ]
+            result = list(self.db.messages.aggregate(pipeline))
+            return result[0]["count"] if result else 0
+        except pymongo_errors.PyMongoError as e:
+            logger.exception("Failed to count active groups: %s", e)
+            return 0
 
     def get_user_stats(self, user_id):
-        """Get sentiment statistics for a user"""
+        """Get sentiment distribution for a user."""
         try:
             pipeline = [
                 {"$match": {"user_id": user_id}},
@@ -71,25 +107,23 @@ class Database:
             ]
             results = list(self.db.messages.aggregate(pipeline))
 
-            stats = {
-                "total": 0,
-                "positive": 0,
-                "negative": 0,
-                "neutral": 0,
-                "toxic": 0
-            }
+            stats = {k: 0 for k in ["positive",
+                                    "negative", "neutral", "toxic"]}
+            stats["total"] = 0
 
-            for result in results:
-                stats[result["_id"]] = result["count"]
-                stats["total"] += result["count"]
+            for r in results:
+                sentiment = r["_id"]
+                count = r["count"]
+                stats[sentiment] = count
+                stats["total"] += count
 
             return stats
-        except (TypeError, ValueError, KeyError) as e:
-            logger.error("Failed to get user stats: %s", e)
+        except (pymongo_errors.PyMongoError, ValueError, KeyError) as e:
+            logger.exception("Failed to get user stats: %s", e)
             return None
 
     def get_group_stats(self, group_id):
-        """Get sentiment statistics for a group"""
+        """Get sentiment distribution for a group."""
         try:
             pipeline = [
                 {"$match": {"chat_id": group_id}},
@@ -97,29 +131,27 @@ class Database:
             ]
             results = list(self.db.messages.aggregate(pipeline))
 
-            stats = {
-                "total": 0,
-                "positive": 0,
-                "negative": 0,
-                "neutral": 0,
-                "toxic": 0
-            }
+            stats = {k: 0 for k in ["positive",
+                                    "negative", "neutral", "toxic"]}
+            stats["total"] = 0
 
-            for result in results:
-                stats[result["_id"]] = result["count"]
-                stats["total"] += result["count"]
+            for r in results:
+                sentiment = r["_id"]
+                count = r["count"]
+                stats[sentiment] = count
+                stats["total"] += count
 
             return stats
-        except (pymongo.errors.PyMongoError, TypeError, ValueError, KeyError) as e:
-            logger.error("Failed to get group stats: %s", e)
+        except (pymongo_errors.PyMongoError, ValueError, KeyError) as e:
+            logger.exception("Failed to get group stats: %s", e)
             return None
 
-    def add_admin_action(self, action_data):
-        """Log an admin action to the database"""
+    def add_admin_action(self, action_data: dict) -> bool:
+        """Log an admin action into the database."""
         try:
             action_data["timestamp"] = datetime.utcnow()
             self.db.admin_actions.insert_one(action_data)
             return True
-        except (pymongo.errors.PyMongoError, TypeError, ValueError) as e:
-            logger.error("Failed to log admin action: %s", e)
+        except (pymongo_errors.PyMongoError, ValueError, KeyError) as e:
+            logger.exception("Failed to log admin action: %s", e)
             return False
